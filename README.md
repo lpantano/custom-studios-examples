@@ -9,6 +9,7 @@ This repository contains example Dockerfiles and configurations for custom Seqer
 - [Streamlit](streamlit/README.md) - MultiQC visualization using Streamlit
 - [Shiny](shiny-simple-example/README.md) - Interactive data visualization with R Shiny
 - [TTYD](ttyd/README.md) - Interactive web-based terminal with bioinformatics tools
+- [IGV](igv/README.md) - Interactive genome browser for genomic data visualization
 
 ## Prerequisites
 
@@ -62,6 +63,7 @@ These examples work with their default configurations and don't require environm
 - **Marimo**: Interactive Python notebook environment
 - **Streamlit**: MultiQC visualization with web-based data loading interface
 - **TTYD**: Web-based terminal with pre-installed bioinformatics tools
+- **IGV**: Interactive genome browser for genomic data visualization
 
 ### Using Environment Variables in Seqera Studios
 
