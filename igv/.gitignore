@@ -1,0 +1,2 @@
+# Ignore test data files (download using download-test-data.sh)
+test-data/

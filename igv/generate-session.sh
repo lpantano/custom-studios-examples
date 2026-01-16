@@ -26,7 +26,7 @@ fi
 echo "Scanning for genomic files in $WORKSPACE_DATA..."
 
 # Initialize CSV file with header
-echo "Subfolder,name,type,url,displayMode,height,description" > "$CSV_FILE"
+echo "Subfolder,name,type,format,url,indexURL,displayMode,height,description" > "$CSV_FILE"
 
 # Function to check if index file exists
 has_index() {
@@ -34,11 +34,49 @@ has_index() {
     local base="${file%.*}"
 
     # Check for various index file extensions
+    # For VCF files: .vcf.gz.tbi, .vcf.gz.csi
+    # For BAM files: .bam.bai, .bai (same base name)
+    # For CRAM files: .cram.crai, .crai (same base name)
     if [ -f "${file}.bai" ] || [ -f "${file}.tbi" ] || [ -f "${file}.csi" ] || \
-       [ -f "${file}.crai" ] || [ -f "${base}.bai" ] || [ -f "${base}.tbi" ]; then
+       [ -f "${file}.crai" ] || [ -f "${base}.bai" ] || [ -f "${base}.tbi" ] || \
+       [ -f "${base}.csi" ] || [ -f "${base}.crai" ]; then
         return 0
     fi
     return 1
+}
+
+# Function to get the index file URL if it exists
+get_index_url() {
+    local file="$1"
+    local base="${file%.*}"
+    local index_file=""
+
+    # Check for index files in order of preference
+    if [ -f "${file}.bai" ]; then
+        index_file="${file}.bai"
+    elif [ -f "${base}.bai" ]; then
+        index_file="${base}.bai"
+    elif [ -f "${file}.crai" ]; then
+        index_file="${file}.crai"
+    elif [ -f "${base}.crai" ]; then
+        index_file="${base}.crai"
+    elif [ -f "${file}.tbi" ]; then
+        index_file="${file}.tbi"
+    elif [ -f "${base}.tbi" ]; then
+        index_file="${base}.tbi"
+    elif [ -f "${file}.csi" ]; then
+        index_file="${file}.csi"
+    elif [ -f "${base}.csi" ]; then
+        index_file="${base}.csi"
+    fi
+
+    # If index file found, convert to relative URL
+    if [ -n "$index_file" ]; then
+        local index_url="${index_file#$WORKSPACE_DATA/}"
+        echo "data/$index_url"
+    else
+        echo ""
+    fi
 }
 
 # Function to get file format based on extension
@@ -62,17 +100,51 @@ get_format() {
     esac
 }
 
-# Function to get track type category
+# Get track type category (IGV track types)
 get_track_type() {
     local file="$1"
     case "${file,,}" in
-        *.bam|*.cram) echo "Alignment" ;;
-        *.vcf|*.vcf.gz) echo "Variant" ;;
-        *.bed|*.bed.gz) echo "Annotation" ;;
-        *.gff|*.gff.gz|*.gff3|*.gff3.gz|*.gtf|*.gtf.gz) echo "Annotation" ;;
-        *.bigwig|*.bw|*.bedgraph|*.bedgraph.gz) echo "Coverage" ;;
-        *.seg) echo "Segment" ;;
-        *) echo "Other" ;;
+        *.bam|*.cram) echo "alignment" ;;
+        *.vcf|*.vcf.gz) echo "variant" ;;
+        *.bed|*.bed.gz) echo "annotation" ;;
+        *.gff|*.gff.gz|*.gff3|*.gff3.gz|*.gtf|*.gtf.gz) echo "annotation" ;;
+        *.bigwig|*.bw|*.bedgraph|*.bedgraph.gz) echo "wig" ;;
+        *.seg) echo "seg" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Get default height for track type
+get_default_height() {
+    local file="$1"
+    case "${file,,}" in
+        *.bam|*.cram) echo "200" ;;
+        *.vcf|*.vcf.gz) echo "100" ;;
+        *.bigwig|*.bw|*.bedgraph|*.bedgraph.gz) echo "100" ;;
+        *.bed|*.bed.gz) echo "50" ;;
+        *.gff|*.gff.gz|*.gff3|*.gff3.gz|*.gtf|*.gtf.gz) echo "100" ;;
+        *.seg) echo "50" ;;
+        *) echo "" ;;
+    esac
+}
+
+# Get description for track type
+get_description() {
+    local file="$1"
+    case "${file,,}" in
+        *.bam) echo "BAM alignment file" ;;
+        *.cram) echo "CRAM alignment file" ;;
+        *.vcf) echo "VCF variant file" ;;
+        *.vcf.gz) echo "VCF variant file (compressed)" ;;
+        *.bigwig|*.bw) echo "BigWig coverage/signal track" ;;
+        *.bedgraph|*.bedgraph.gz) echo "BedGraph coverage track" ;;
+        *.bed) echo "BED annotation file" ;;
+        *.bed.gz) echo "BED annotation file (compressed)" ;;
+        *.gff|*.gff.gz) echo "GFF annotation file" ;;
+        *.gff3|*.gff3.gz) echo "GFF3 annotation file" ;;
+        *.gtf|*.gtf.gz) echo "GTF gene annotation file" ;;
+        *.seg) echo "Segmentation file" ;;
+        *) echo "" ;;
     esac
 }
 
@@ -90,6 +162,9 @@ while IFS= read -r -d '' file; do
     # Get format
     format=$(get_format "$file")
 
+    # Get track type
+    track_type=$(get_track_type "$file")
+
     # Get subfolder (immediate parent directory)
     file_dir=$(dirname "$file")
     subfolder=$(basename "$file_dir")
@@ -98,16 +173,29 @@ while IFS= read -r -d '' file; do
     url="${file#$WORKSPACE_DATA/}"
     url="data/$url"
 
+    # Get index URL if available
+    index_url=$(get_index_url "$file")
+
+    # Get default height for this track type
+    height=$(get_default_height "$file")
+
+    # Get description for this track type
+    description=$(get_description "$file")
+
     # Check if indexed (for warnings only)
-    if ! has_index "$file" && [[ "$file" =~ \.(bam|cram)$ ]]; then
-        echo "Warning: $filename has no index file (.bai/.crai) - may not load properly"
+    if [ -z "$index_url" ] && [[ "$file" =~ \.(bam|cram|vcf\.gz)$ ]]; then
+        echo "Warning: $filename has no index file (.bai/.crai/.tbi) - may not load properly"
     fi
 
-    # Add row to CSV: Subfolder,name,type,url,displayMode,height,description
-    echo "$subfolder,$name,$format,$url,,," >> "$CSV_FILE"
+    # Add row to CSV: Subfolder,name,type,format,url,indexURL,displayMode,height,description
+    echo "$subfolder,$name,$track_type,$format,$url,$index_url,,$height,$description" >> "$CSV_FILE"
 
     TRACK_COUNT=$((TRACK_COUNT + 1))
-    echo "Found: $filename"
+    if [ -n "$index_url" ]; then
+        echo "Found: $filename (with index: $(basename "$index_url"))"
+    else
+        echo "Found: $filename"
+    fi
 
 done < <(find "$WORKSPACE_DATA" -type f \( \
     -iname "*.bam" -o \
@@ -138,7 +226,8 @@ cat > "$JSON_CONFIG" << 'EOF'
   "description": "Genomic tracks automatically discovered from mounted data",
   "columns": [
     "Subfolder",
-    "name"
+    "name",
+    "description"
   ],
   "columnDefs": {
     "name": {
@@ -146,6 +235,9 @@ cat > "$JSON_CONFIG" << 'EOF'
     },
     "Subfolder": {
       "title": "Source Folder"
+    },
+    "description": {
+      "title": "Data Type"
     }
   },
   "delimiter": ",",
