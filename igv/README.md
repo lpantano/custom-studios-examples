@@ -14,7 +14,7 @@ This example demonstrates how to deploy the [IGV (Integrative Genomics Viewer) w
 - Session auto-generation for immediate data visualization
 - No authentication required for quick access
 
-Test with my container: ghcr.io/lpantano/igv-webapp:latest
+Test with my container: [ghcr.io/lpantano/igv-webapp:latest](ghcr.io/lpantano/igv-webapp:latest)
 
 ## Prerequisites
 
