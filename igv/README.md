@@ -32,6 +32,8 @@ Build the image for the linux/amd64 platform:
 docker build --platform linux/amd64 -t your-registry/igv-webapp:latest .
 ```
 
+**Note:** The `--platform linux/amd64` flag is required to ensure the image runs correctly on Seqera Platform, especially when building on ARM-based systems (e.g., Apple Silicon Macs).
+
 Push to your container registry:
 
 ```bash
@@ -70,7 +72,7 @@ This script will:
 #### 1. Build the Image
 
 ```bash
-docker build -t igv-webapp-test .
+docker build --platform linux/amd64 -t igv-webapp-test .
 ```
 
 #### 2. Run with Test Data
@@ -181,8 +183,8 @@ If you want to customize the container or build your own:
 #### Option A: Using Docker and GitHub Container Registry
 
 ```bash
-# Build the image
-docker build -t igv-webapp-test .
+# Build the image for linux/amd64 (required for Seqera Platform)
+docker build --platform linux/amd64 -t igv-webapp-test .
 
 # Tag for GitHub Container Registry
 docker tag igv-webapp-test ghcr.io/YOUR_USERNAME/igv-webapp:latest
