@@ -14,6 +14,8 @@ This example demonstrates how to deploy the [IGV (Integrative Genomics Viewer) w
 - Session auto-generation for immediate data visualization
 - No authentication required for quick access
 
+Test with my container: ghcr.io/lpantano/igv-webapp:latest
+
 ## Prerequisites
 
 - [Docker](https://www.docker.com/) installed for local testing
@@ -163,7 +165,18 @@ docker stop igv-test && docker rm igv-test
 
 ## Deploying to Seqera Studios
 
-### Step 1: Build and Push Your Container Image
+### Quick Start - Use Pre-built Image
+
+A ready-to-use container image is available at:
+```
+ghcr.io/lpantano/igv-webapp:latest
+```
+
+You can use this image directly in Seqera Studios without building it yourself. Skip to [Step 2: Create a Studio](#step-2-create-a-studio-in-seqera-platform) to get started immediately.
+
+### Step 1: Build and Push Your Container Image (Optional)
+
+If you want to customize the container or build your own:
 
 #### Option A: Using Docker and GitHub Container Registry
 
@@ -197,7 +210,7 @@ Wave can build and push your container automatically from the Dockerfile. See th
 
    **Basic Configuration:**
    - **Container template**: Select "Prebuilt container image"
-   - **Container image URI**: Enter your image URI (e.g., `ghcr.io/YOUR_USERNAME/igv-webapp:latest`)
+   - **Container image URI**: Enter `ghcr.io/lpantano/igv-webapp:latest` (or your custom image URI)
    - **Studio name**: Enter a descriptive name (e.g., "IGV Genome Browser")
    - **Description**: Optional description of the studio
 

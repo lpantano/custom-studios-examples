@@ -20,10 +20,9 @@ fi
 # Check if workspace data directory exists and has content
 if [ ! -d "$WORKSPACE_DATA" ] || [ -z "$(ls -A $WORKSPACE_DATA 2>/dev/null)" ]; then
     echo "No data mounted at $WORKSPACE_DATA - IGV will start without pre-loaded tracks"
-    exit 0
-fi
-
-echo "Scanning for genomic files in $WORKSPACE_DATA..."
+    # Don't exit - let http-server start anyway
+else
+    echo "Scanning for genomic files in $WORKSPACE_DATA..."
 
 # Initialize CSV file with header
 echo "Subfolder,name,type,format,url,indexURL,displayMode,height,description" > "$CSV_FILE"
@@ -212,12 +211,8 @@ done < <(find "$WORKSPACE_DATA" -type f \( \
 
 echo "Found $TRACK_COUNT compatible track(s)"
 
-if [ $TRACK_COUNT -eq 0 ]; then
-    echo "No tracks found - IGV will start without custom tracks"
-    exit 0
-fi
-
-# Generate custom data modal JSON configuration
+if [ $TRACK_COUNT -gt 0 ]; then
+    # Generate custom data modal JSON configuration
 echo "Generating custom data modal configuration: $JSON_CONFIG"
 cat > "$JSON_CONFIG" << 'EOF'
 {
@@ -277,5 +272,9 @@ else
 EOF
 fi
 
-echo "Track catalog created successfully with $TRACK_COUNT track(s)"
-echo "IGV will show 'Auto-discovered Tracks' in the Tracks menu under $GENOME genome"
+    echo "Track catalog created successfully with $TRACK_COUNT track(s)"
+    echo "IGV will show 'Auto-discovered Tracks' in the Tracks menu under $GENOME genome"
+fi
+
+# Close the data check conditional
+fi
